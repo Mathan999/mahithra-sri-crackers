@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { ref, onValue, get, set, push, off } from "firebase/database";
 import { database } from "../firebase";
-import { Plus, Minus, Loader2, CheckCircle } from "lucide-react";
+import { Plus, Minus, Loader2, CheckCircle, Download } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "./Products.css";
 
@@ -26,6 +26,9 @@ function Products() {
   const [isPdfDownloading, setIsPdfDownloading] = useState(false);
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [currentOrderData, setCurrentOrderData] = useState(null);
+  const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
 
   const categories = [
     "ONE SOUND CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA SPECIAL", 
@@ -140,6 +143,9 @@ function Products() {
     setErrors({});
     setIsOrderPlaced(false);
     setShowSuccessAnimation(false);
+    setCurrentOrderData(null);
+    setPdfDownloaded(false);
+    setShowWhatsAppButton(false);
   };
 
   const generatePDF = (orderData) => {
@@ -306,9 +312,9 @@ function Products() {
     return words.join(" ");
   };
 
-  const sendWhatsAppMessage = (orderData, pdfBase64) => {
+  const sendWhatsAppMessage = (orderData) => {
     const phoneNumber = "918778915065";
-    let message = `New Order Received!\n\nInvoice No.: ${orderData.invoiceNumber}\nCustomer: ${orderData.userName}\nPhone: ${orderData.userPhone}\nAddress: ${orderData.userAddress}\nStatus: ${orderData.status}\nTotal Amount: ₹${orderData.totalAmount.toFixed(2)}\n\nItems:\n${orderData.cart.map(item => `${item.productName} - Qty: ${item.quantity} - ₹${(item.ourPrice * item.quantity).toFixed(2)}`).join('\n')}\n\nNote: The order summary PDF has been downloaded to your device. Please share it manually via WhatsApp.`;
+    let message = `New Order Received!\n\nInvoice No.: ${orderData.invoiceNumber}\nCustomer: ${orderData.userName}\nPhone: ${orderData.userPhone}\nAddress: ${orderData.userAddress}\nStatus: ${orderData.status}\nTotal Amount: ₹${orderData.totalAmount.toFixed(2)}\n\nItems:\n${orderData.cart.map(item => `${item.productName} - Qty: ${item.quantity} - ₹${(item.ourPrice * item.quantity).toFixed(2)}`).join('\n')}\n\nNote: Please share the downloaded PDF invoice along with this message.`;
     
     if (message.length > 4000) {
       message = message.substring(0, 3990) + "...";
@@ -317,18 +323,6 @@ function Products() {
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
     
     try {
-      // Trigger PDF download
-      const pdfBlob = new Blob([atob(pdfBase64)], { type: 'application/pdf' });
-      const pdfUrl = URL.createObjectURL(pdfBlob);
-      const fileName = `order_summary_${orderData.invoiceNumber}.pdf`;
-      const downloadLink = document.createElement('a');
-      downloadLink.href = pdfUrl;
-      downloadLink.download = fileName;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-      URL.revokeObjectURL(pdfUrl);
-
       // Open WhatsApp with text message
       const whatsappLink = document.createElement('a');
       whatsappLink.href = whatsappUrl;
@@ -337,19 +331,16 @@ function Products() {
       whatsappLink.click();
       document.body.removeChild(whatsappLink);
 
-      // Alert user to manually share the PDF
+      // Alert user about the next steps
       alert(
-        "Order placed successfully! The order summary PDF has been downloaded to your device. " +
-        "A WhatsApp message has been opened with the order details. Please manually attach the downloaded PDF " +
-        `(named ${fileName}) to the WhatsApp chat with +918778915065 and send it.`
+        "WhatsApp opened successfully! Please attach the downloaded PDF invoice to the chat and send it along with the order details."
       );
 
       return true;
     } catch (error) {
-      console.error("Error in sendWhatsAppMessage:", error);
+      console.error("Error opening WhatsApp:", error);
       alert(
-        "Failed to process WhatsApp message or PDF download. " +
-        "Please ensure WhatsApp is installed and try again, or manually share the downloaded PDF."
+        "Failed to open WhatsApp. Please ensure WhatsApp is installed and try again, or manually contact +918778915065 with your order details and the downloaded PDF."
       );
       return false;
     }
@@ -383,16 +374,13 @@ function Products() {
       await set(invoiceCounterRef, newInvoiceNumber);
       setLastInvoiceNumber(newInvoiceNumber);
 
-      const pdfDoc = generatePDF(fullOrderData);
-      const pdfBase64 = pdfDoc.output('datauristring').split(',')[1];
+      // Store order data for later use
+      setCurrentOrderData(fullOrderData);
+      setIsOrderPlaced(true);
+      setShowSuccessAnimation(true);
+      setTimeout(() => setShowSuccessAnimation(false), 3000);
 
-      const whatsappSent = sendWhatsAppMessage(fullOrderData, pdfBase64);
-
-      if (whatsappSent) {
-        setIsOrderPlaced(true);
-        setShowSuccessAnimation(true);
-        setTimeout(() => setShowSuccessAnimation(false), 3000);
-      }
+      alert("Order placed successfully! Please download the PDF invoice and then proceed to WhatsApp.");
     } catch (error) {
       console.error("Error processing order:", error);
       alert(`Failed to process your order: ${error.message}. Please try again.`);
@@ -401,30 +389,48 @@ function Products() {
     }
   };
 
-  const handlePrint = (orderData) => {
+  const handlePdfDownload = async () => {
+    setIsPdfDownloading(true);
     try {
-      const pdfDoc = generatePDF(orderData);
-      const pdfOutput = pdfDoc.output('blob');
-      const pdfUrl = URL.createObjectURL(pdfOutput);
-      const fileName = `order_summary_${orderData.invoiceNumber}.pdf`;
+      if (currentOrderData) {
+        const pdfDoc = generatePDF(currentOrderData);
+        const pdfOutput = pdfDoc.output('blob');
+        const pdfUrl = URL.createObjectURL(pdfOutput);
+        const fileName = `order_summary_${currentOrderData.invoiceNumber}.pdf`;
 
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.download = fileName;
-      link.style.display = 'none';
-      document.body.appendChild(link);
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
 
-      if (window.navigator && window.navigator.msSaveOrOpenBlob) {
-        window.navigator.msSaveOrOpenBlob(pdfOutput, fileName);
-      } else {
-        link.click();
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+          window.navigator.msSaveOrOpenBlob(pdfOutput, fileName);
+        } else {
+          link.click();
+        }
+
+        document.body.removeChild(link);
+        URL.revokeObjectURL(pdfUrl);
+
+        // Mark PDF as downloaded and show WhatsApp button
+        setPdfDownloaded(true);
+        setShowWhatsAppButton(true);
+        alert("PDF downloaded successfully! Now you can proceed to WhatsApp to share your order details.");
       }
-
-      document.body.removeChild(link);
-      URL.revokeObjectURL(pdfUrl);
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert(`Failed to generate PDF: ${error.message}`);
+    } finally {
+      setIsPdfDownloading(false);
+    }
+  };
+
+  const handleWhatsAppShare = () => {
+    if (currentOrderData && pdfDownloaded) {
+      sendWhatsAppMessage(currentOrderData);
+    } else {
+      alert("Please download the PDF first before proceeding to WhatsApp.");
     }
   };
 
@@ -470,35 +476,6 @@ function Products() {
 
   const handleClearCart = () => {
     clearCart();
-    setUserName('');
-    setUserPhone('');
-    setUserAddress('');
-    setErrors({});
-    setIsOrderPlaced(false);
-  };
-
-  const handlePdfDownload = async () => {
-    setIsPdfDownloading(true);
-    try {
-      await handlePrint({
-        userName,
-        userPhone,
-        userAddress,
-        cart,
-        totalAmount,
-        orderDate: new Date().toISOString(),
-        invoiceNumber: lastInvoiceNumber,
-        status: 'Pending'
-      });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error) {
-      console.error("Error downloading PDF:", error);
-      alert(`Failed to download PDF: ${error.message}`);
-    } finally {
-      setIsPdfDownloading(false);
-    }
   };
 
   const isCartEmpty = cart.length === 0;
@@ -559,7 +536,7 @@ function Products() {
       )}
 
       {showSuccessAnimation && (
-        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white p-4 rounded-full flex items-center justify-center animate-bounce">
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white p-4 rounded-full flex items-center justify-center animate-bounce z-50">
           <CheckCircle size={32} className="mr-2" />
           <span className="text-lg">Order Placed Successfully!</span>
         </div>
@@ -666,101 +643,159 @@ function Products() {
         <h2 className="text-2xl font-bold mb-4">Cart Summary</h2>
         <p className="mb-2">Total Items: {cart.reduce((total, item) => total + (item.quantity || 0), 0)}</p>
         <p className="mb-4">Total Amount: ₹{totalAmount.toFixed(2)}</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="userName" className="block text-sm font-medium text-gray-700">Name:</label>
-            <input
-              id="userName"
-              type="text"
-              placeholder="Enter your name"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              className={`px-3 py-2 text-black mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.name ? 'border-red-500' : ''}`}
-              required
-              disabled={isLoading}
-            />
-            {errors.name && <span className="text-red-500 text-xs">{errors.name}</span>}
-          </div>
-
-          <div>
-            <label htmlFor="userAddress" className="block text-sm font-medium text-gray-700">Address:</label>
-            <textarea
-              id="userAddress"
-              placeholder="Enter your address"
-              value={userAddress}
-              onChange={(e) => setUserAddress(e.target.value)}
-              className={`text-black p-3 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.address ? 'border-red-500' : ''}`}
-              required
-              disabled={isLoading}
-            />
-            {errors.address && <span className="text-red-500 text-xs">{errors.address}</span>}
-          </div>
-
-          <div>
-            <label htmlFor="userPhone" className="block text-sm font-medium text-gray-700">Phone:</label>
-            <input
-              id="userPhone"
-              type="tel"
-              placeholder="Enter your Phone no"
-              value={userPhone}
-              onChange={(e) => setUserPhone(e.target.value)}
-              className={`px-3 py-2 text-black mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.phone ? 'border-red-500' : ''}`}
-              required
-              disabled={isLoading}
-            />
-            {errors.phone && <span className="text-red-500 text-xs">{errors.phone}</span>}
-          </div>
-
-          <div className="flex space-x-4">
-            <button
-              type="button"
-              onClick={handleClearCart}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition"
-              disabled={isLoading}
-            >
-              Clear Cart
-            </button>
-            {!isCartEmpty && (
-              <button
-                type="submit"
+        
+        {!isOrderPlaced ? (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="userName" className="block text-sm font-medium text-gray-700">Name:</label>
+              <input
+                id="userName"
+                type="text"
+                placeholder="Enter your name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                className={`px-3 py-2 text-black mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.name ? 'border-red-500' : ''}`}
+                required
                 disabled={isLoading}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <Loader2 className="animate-spin mr-2" size={20} />
-                    Processing...
-                  </span>
-                ) : (
-                  'Purchase'
-                )}
-              </button>
-            )}
-            {isOrderPlaced && (
+              />
+              {errors.name && <span className="text-red-500 text-xs">{errors.name}</span>}
+            </div>
+
+            <div>
+              <label htmlFor="userAddress" className="block text-sm font-medium text-gray-700">Address:</label>
+              <textarea
+                id="userAddress"
+                placeholder="Enter your address"
+                value={userAddress}
+                onChange={(e) => setUserAddress(e.target.value)}
+                className={`text-black p-3 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.address ? 'border-red-500' : ''}`}
+                required
+                disabled={isLoading}
+              />
+              {errors.address && <span className="text-red-500 text-xs">{errors.address}</span>}
+            </div>
+
+            <div>
+              <label htmlFor="userPhone" className="block text-sm font-medium text-gray-700">Phone:</label>
+              <input
+                id="userPhone"
+                type="tel"
+                placeholder="Enter your Phone no"
+                value={userPhone}
+                onChange={(e) => setUserPhone(e.target.value)}
+                className={`px-3 py-2 text-black mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.phone ? 'border-red-500' : ''}`}
+                required
+                disabled={isLoading}
+              />
+              {errors.phone && <span className="text-red-500 text-xs">{errors.phone}</span>}
+            </div>
+
+            <div className="flex space-x-4">
               <button
                 type="button"
-                onClick={handlePdfDownload}
-                disabled={isPdfDownloading || isLoading}
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleClearCart}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition"
+                disabled={isLoading}
               >
-                {isPdfDownloading ? (
-                  <span className="flex items-center">
-                    <Loader2 className="animate-spin mr-2" size={20} />
-                    Downloading...
-                  </span>
-                ) : (
-                  'Download Order PDF'
-                )}
+                Clear Cart
               </button>
-            )}
+              {!isCartEmpty && (
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <span className="flex items-center">
+                      <Loader2 className="animate-spin mr-2" size={20} />
+                      Processing...
+                    </span>
+                  ) : (
+                    'Purchase'
+                  )}
+                </button>
+              )}
+            </div>
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+              <strong>Order Placed Successfully!</strong>
+              <p className="mt-2">Invoice No: {currentOrderData?.invoiceNumber}</p>
+              <p>Total Amount: ₹{currentOrderData?.totalAmount?.toFixed(2)}</p>
+            </div>
+
+            <div className="flex space-x-4 flex-wrap">
+              <button
+                type="button"
+                onClick={handleClearCart}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition"
+              >
+                Clear Cart & New Order
+              </button>
+
+              {!pdfDownloaded && (
+                <button
+                  type="button"
+                  onClick={handlePdfDownload}
+                  disabled={isPdfDownloading}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {isPdfDownloading ? (
+                    <>
+                      <Loader2 className="animate-spin mr-2" size={20} />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2" size={20} />
+                      Download PDF Invoice
+                    </>
+                  )}
+                </button>
+              )}
+
+              {pdfDownloaded && !showWhatsAppButton && (
+                <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded flex items-center">
+                  <CheckCircle className="mr-2" size={20} />
+                  PDF Downloaded Successfully!
+                </div>
+              )}
+
+              {showWhatsAppButton && (
+                <button
+                  type="button"
+                  onClick={handleWhatsAppShare}
+                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-opacity-50 transition flex items-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.109"/>
+                  </svg>
+                  Share via WhatsApp
+                </button>
+              )}
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+              <h4 className="font-semibold mb-2">Next Steps:</h4>
+              {!pdfDownloaded ? (
+                <p>1. First, download your PDF invoice by clicking the "Download PDF Invoice" button above.</p>
+              ) : !showWhatsAppButton ? (
+                <p>2. PDF downloaded successfully! Now you can proceed to WhatsApp.</p>
+              ) : (
+                <p>3. Click "Share via WhatsApp" to send your order details. Don't forget to attach the downloaded PDF invoice!</p>
+              )}
+            </div>
           </div>
-        </form>
+        )}
+
         <p className="mt-4 text-sm text-red-500">
           Note: Please ensure that your order is selected correctly. Once you have verified your selection, click the "Purchase" button. The purchase process may take a few seconds, so we kindly ask for your patience. Minimum order value is ₹3000.
         </p>
+
         {isOrderPlaced && (
-          <p className="mt-4 text-sm text-blue-500">
-            Note: Your order is ready for download. The PDF file will be available for download only during this session. If you refresh the page or click the "Clear Cart" button, you will need to process the order again to generate a new PDF.
+          <p className="mt-4 text-sm text-green-600">
+            <strong>Order Process:</strong> Your order has been placed successfully! Please download the PDF invoice first, then use the WhatsApp button to share your order details along with the downloaded PDF.
           </p>
         )}
       </div>
