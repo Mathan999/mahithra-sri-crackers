@@ -124,7 +124,7 @@ const HeroContainerHome = () => {
             </svg>
           </div>
           <p className="text-base md:text-lg lg:text-xl font-semibold text-center md:text-right">
-            Sankarankovil Main Road, <br /> Vembakottai, Sivakasi - 626123
+            Vanamoorthilingapuram, <br /> Madathupatti, Sivakasi - 626123
           </p>
         </div>
       </div>
