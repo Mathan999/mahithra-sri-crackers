@@ -32,13 +32,31 @@ function Products() {
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
 
+  // Updated categories to match your Firebase data
   const categories = [
-    "ONE SOUND CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA SPECIAL", 
-    "RETRO CRACKERS THALA DIWALI SPECIAL", "BIJILI CRACKERS", "ATOM BOMBS", "FLOWER POTS", 
-    "FLOWER POTS NEW ARRIVAL - 2024", "GROUND CHAKKAR", "Children Collections", "FOUNTAIN ITEMS", 
-    "PARTY CELEBRATION - 2024 SPECIAL", "CRACKLING FOUTAIN", "ROCKET", "TWINKLING STAR", 
-    "CANDEL COLLECTION", "FANCY SINGLE SHOTS", "FANCY CONTINIOUS SHOTS", "COLOUR MATCHES", 
-    "SPARKLERS", "GIFT BOX - NO DISCOUNT"
+    "ONE SOUND CRACKERS", 
+    "PARTY CELEBRATION - 2024 SPECIAL", 
+    "ELECTRIC CRACKERS", 
+    "CHORSA & GAINT CRACKERS", 
+    "DELUXE CRACKERS", 
+    "WALA CRACKERS", 
+    "BIJILI", 
+    "PAPER BOMBS (ADIYAL)", 
+    "BOMBS",
+    "FLOWER POTS", 
+    "GROUND CHAKKAR", 
+    "TWINKLING STAR", 
+    "KIDS SPECIAL - 1", 
+    "NEW COLLECTION - 2025", 
+    "FRUITS SHOWER", 
+    "CANDLE SPECIAL", 
+    "MULTI NEW VARIETIES", 
+    "KUTIES FUN", 
+    "SKY ROCKETS", 
+    "MATCHE BOXS", 
+    "MULTI COLOUR", 
+    "SPARKLERS", 
+    "GIFT BOX - NO DISCOUNT"
   ];
 
   const handleScroll = useCallback(() => {
@@ -65,10 +83,12 @@ function Products() {
         const loadedProducts = Object.entries(data).map(([key, value]) => ({
           id: key,
           ...value,
-          categorys: value.climate || 'Unspecified',
+          // Fixed: Use climate field as the primary category field
+          categorys: value.climate || value.categorys || value.category || 'Unspecified',
           imageUrl: value.imageUrl || logo
         }));
         console.log('Fetched Products:', loadedProducts);
+        console.log('Categories found:', [...new Set(loadedProducts.map(p => p.categorys))]);
         setProducts(loadedProducts);
       } else {
         console.log('No products found in Firebase');
@@ -542,22 +562,25 @@ function Products() {
 
   const isCartEmpty = cart.length === 0;
 
+  // Get all unique categories from products for dynamic display
+  const availableCategories = [...new Set(filteredProducts.map(p => p.categorys))].filter(cat => cat);
+
   return (
     <div className="products">
       <Helmet>
         <title>Mahindra Sri Crackers - Diwali Special Offers 2024</title>
         <meta name="description" content="Browse our wide selection of high-quality crackers for all occasions. Filter by climate, search for specific products, and easily manage your cart." />
-        <meta property="og:title" content="Mahindra Sri Crackers - Product Catalog" />
+        <meta property="og:title" content="Mahithraa Sri Crackers - Product Catalog" />
         <meta property="og:description" content="Explore our diverse range of crackers. From morning to night, fancy to gift boxes, we have it all. Shop now for the best deals!" />
         <meta property="og:image" content={logo} />
-        <meta property="og:url" content="https://www.mahindrasricrackers.com/products" />
+        <meta property="og:url" content="https://www.mahithraasricrackers.com/products" />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Mahindra Sri Crackers - Product Catalog" />
+        <meta name="twitter:title" content="Mahithraa Sri Crackers - Product Catalog" />
         <meta name="twitter:description" content="Discover our extensive range of crackers for all your celebration needs. Easy filtering and search options available." />
         <meta name="twitter:image" content={logo} />
         <meta name="keywords" content="crackers, fireworks, Diwali, celebration, morning crackers, night crackers, fancy crackers, gift boxes" />
-        <meta name="author" content="Mahindra Sri Crackers" />
+        <meta name="author" content="Mahithraa Sri Crackers" />
         <meta name="robots" content="index, follow" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <script type="application/ld+json">
@@ -565,9 +588,9 @@ function Products() {
             {
               "@context": "http://schema.org",
               "@type": "ItemList",
-              "name": "RETRO CRACKERS Product Catalog",
+              "name": "MAHITHRAA SRI CRACKERS Product Catalog",
               "description": "Browse our wide selection of high-quality crackers for all occasions.",
-              "url": "https://www.mahindrasricrackers.com/products",
+              "url": "https://www.mahithraasricrackers.com/products",
               "numberOfItems": "${products.length}",
               "itemListElement": [
                 ${products.map((product, index) => `
@@ -620,7 +643,9 @@ function Products() {
       <div className="table-container">
         {(() => {
           let globalIndex = 1;
-          return categories.map(categorys => {
+          
+          // Use available categories instead of predefined ones
+          return availableCategories.map(categorys => {
             const categoryProducts = filteredProducts.filter(product => product.categorys === categorys);
             if (categoryProducts.length === 0) return null;
 
@@ -699,6 +724,38 @@ function Products() {
             );
           });
         })()}
+
+        {/* Debug section - shows if products exist but aren't displaying */}
+        {/* {products.length > 0 && availableCategories.length === 0 && (
+          <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
+            <h3 className="font-bold">Products found but no valid categories detected:</h3>
+            <p>Total products: {products.length}</p>
+            <p>Sample product structure:</p>
+            <pre className="text-xs">{JSON.stringify(products[0], null, 2)}</pre>
+          </div>
+        )} */}
+        
+        {/* {products.length > 0 && filteredProducts.length === 0 && searchTerm && (
+          <div className="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
+            <p>No products match your search term "{searchTerm}"</p>
+            <p>Available products: {products.map(p => p.productName).join(', ')}</p>
+          </div>
+        )} */}
+
+        {/* {products.length === 0 && (
+          <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            <h3 className="font-bold">No products found in database</h3>
+            <p>Please check your Firebase configuration and ensure products exist in the 'products' collection.</p>
+          </div>
+        )} */}
+
+        {/* {availableCategories.length > 0 && (
+          <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded mb-4">
+            <h3 className="font-bold">Products loaded successfully!</h3>
+            <p>Found {products.length} products in {availableCategories.length} categories:</p>
+            <p className="text-sm">{availableCategories.join(', ')}</p>
+          </div>
+        )} */}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md" ref={cartSummaryRef}>
