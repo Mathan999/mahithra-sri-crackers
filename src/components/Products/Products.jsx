@@ -17,8 +17,10 @@ function Products() {
   const [userName, setUserName] = useState('');
   const [userPhone, setUserPhone] = useState('');
   const [userAddress, setUserAddress] = useState('');
+  const [userCity, setUserCity] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [lastInvoiceNumber, setLastInvoiceNumber] = useState(0);
+  const [lastTokenNumber, setLastTokenNumber] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const cartSummaryRef = useRef(null);
   const [showFixedTotal, setShowFixedTotal] = useState(false);
@@ -55,6 +57,7 @@ function Products() {
   useEffect(() => {
     const productsRef = ref(database, 'products');
     const invoiceCounterRef = ref(database, 'invoiceCounter');
+    const tokenCounterRef = ref(database, 'tokenCounter');
 
     const handleProductData = (snapshot) => {
       const data = snapshot.val();
@@ -73,14 +76,19 @@ function Products() {
       }
     };
 
-    const fetchLastInvoiceNumber = async () => {
+    const fetchCounters = async () => {
       try {
-        const snapshot = await get(invoiceCounterRef);
-        const counter = snapshot.val() || 0;
-        setLastInvoiceNumber(counter);
+        const invoiceSnapshot = await get(invoiceCounterRef);
+        const tokenSnapshot = await get(tokenCounterRef);
+        
+        const invoiceCounter = invoiceSnapshot.val() || 0;
+        const tokenCounter = tokenSnapshot.val() || 0;
+        
+        setLastInvoiceNumber(invoiceCounter);
+        setLastTokenNumber(tokenCounter);
       } catch (error) {
-        console.error("Error fetching invoice counter:", error);
-        alert("Failed to fetch invoice counter. Please try again.");
+        console.error("Error fetching counters:", error);
+        alert("Failed to fetch counters. Please try again.");
       }
     };
 
@@ -88,7 +96,7 @@ function Products() {
       console.error("Error fetching products:", error);
       alert("Failed to fetch products. Please check your connection or try again.");
     });
-    fetchLastInvoiceNumber();
+    fetchCounters();
 
     return () => off(productsRef);
   }, []);
@@ -140,6 +148,7 @@ function Products() {
     setUserName('');
     setUserPhone('');
     setUserAddress('');
+    setUserCity('');
     setErrors({});
     setIsOrderPlaced(false);
     setShowSuccessAnimation(false);
@@ -158,12 +167,12 @@ function Products() {
 
     doc.setFontSize(18);
     doc.setTextColor(0, 0, 0);
-    doc.text("RETRO CRACKERS", 105, 20, { align: "center" });
+    doc.text("MAHITHRAA SRI CRACKERS", 105, 20, { align: "center" });
 
     doc.setFontSize(10);
-    doc.text("Sankarankovil Main Road,", 105, 30, { align: "center" });
-    doc.text("Vembakottai, Sivakasi - 626123", 105, 35, { align: "center" });
-    doc.text("Phone no.: +919597413148 & +919952555514", 105, 40, { align: "center" });
+    doc.text("Vanamoorthilingapuram,", 105, 30, { align: "center" });
+    doc.text("Madathupatti, Sivakasi - 626123", 105, 35, { align: "center" });
+    doc.text("Phone no.: +919080533427 & +918110087349", 105, 40, { align: "center" });
 
     if (img.complete && img.naturalWidth !== 0) {
       doc.addImage(qrCodeImage, 'WEBP', 150, 50, 40, 40);
@@ -172,20 +181,22 @@ function Products() {
     }
 
     doc.setFontSize(10);
-    doc.text("UPI id: muthukumarm380@oksbi", 150, 95);
+    doc.text("UPI id: sankarguru81100@oksbi", 150, 95);
 
     doc.setFontSize(14);
     doc.text("Tax Invoice", 20, 50);
 
     doc.setFontSize(10);
     doc.text(`Invoice No.: ${orderData.invoiceNumber}`, 20, 60);
-    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 20, 65);
-    doc.text(`Status: ${orderData.status}`, 20, 70);
+    doc.text(`Token No.: ${orderData.tokenNumber}`, 20, 65);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 20, 70);
+    doc.text(`Status: ${orderData.status}`, 20, 75);
 
-    doc.text("Bill To:", 20, 80);
-    doc.text(`${orderData.userName || 'N/A'}`, 20, 85);
-    doc.text(`${orderData.userAddress || 'N/A'}`, 20, 90);
-    doc.text(`Phone: ${orderData.userPhone || 'N/A'}`, 20, 95);
+    doc.text("Bill To:", 20, 85);
+    doc.text(`${orderData.userName || 'N/A'}`, 20, 90);
+    doc.text(`${orderData.userAddress || 'N/A'}`, 20, 95);
+    doc.text(`${orderData.userCity || 'N/A'}`, 20, 100);
+    doc.text(`Phone: ${orderData.userPhone || 'N/A'}`, 20, 105);
 
     const sortAndGroupCartItems = (cart) => {
       const categoryOrder = categories;
@@ -207,7 +218,7 @@ function Products() {
 
     const sortedCartItems = sortAndGroupCartItems(orderData.cart || []);
 
-    let yPos = 105;
+    let yPos = 115;
     doc.setFillColor(240, 240, 240);
     doc.rect(10, yPos, 190, 10, "F");
     doc.setTextColor(0, 0, 0);
@@ -314,7 +325,7 @@ function Products() {
 
   const sendWhatsAppMessage = (orderData) => {
     const phoneNumber = "919080533427";
-    let message = `New Order Received!\n\nInvoice No.: ${orderData.invoiceNumber}\nCustomer: ${orderData.userName}\nPhone: ${orderData.userPhone}\nAddress: ${orderData.userAddress}\nStatus: ${orderData.status}\nTotal Amount: ₹${orderData.totalAmount.toFixed(2)}\n\nItems:\n${orderData.cart.map(item => `${item.productName} - Qty: ${item.quantity} - ₹${(item.ourPrice * item.quantity).toFixed(2)}`).join('\n')}\n\nNote: Please share the downloaded PDF invoice along with this message.`;
+    let message = `New Order Received!\n\nToken No.: ${orderData.tokenNumber}\nInvoice No.: ${orderData.invoiceNumber}\nCustomer: ${orderData.userName}\nPhone: ${orderData.userPhone}\nAddress: ${orderData.userAddress}\nCity: ${orderData.userCity}\nStatus: ${orderData.status}\nTotal Amount: ₹${orderData.totalAmount.toFixed(2)}\n\nItems:\n${orderData.cart.map(item => `${item.productName} - Qty: ${item.quantity} - ₹${(item.ourPrice * item.quantity).toFixed(2)}`).join('\n')}\n\nNote: Please share the downloaded PDF invoice along with this message.`;
     
     if (message.length > 4000) {
       message = message.substring(0, 3990) + "...";
@@ -359,20 +370,46 @@ function Products() {
 
     setIsLoading(true);
     const newInvoiceNumber = lastInvoiceNumber + 1;
+    const newTokenNumber = lastTokenNumber + 1;
+    
     const fullOrderData = {
       ...orderData,
       orderDate: new Date().toISOString(),
       invoiceNumber: newInvoiceNumber,
-      status: 'Pending'
+      tokenNumber: newTokenNumber,
+      status: 'Pending',
+      pdfDownloaded: false
     };
 
     const ordersRef = ref(database, 'orders');
+    const customerOrdersRef = ref(database, 'customerOrders');
     const invoiceCounterRef = ref(database, 'invoiceCounter');
+    const tokenCounterRef = ref(database, 'tokenCounter');
 
     try {
+      // Save to both orders and customerOrders
       await push(ordersRef, fullOrderData);
+      await push(customerOrdersRef, {
+        id: Date.now(),
+        customer: fullOrderData.userName,
+        address: fullOrderData.userAddress,
+        city: fullOrderData.userCity,
+        phone: fullOrderData.userPhone,
+        tokenNumber: newTokenNumber,
+        invoiceNumber: newInvoiceNumber,
+        status: fullOrderData.status,
+        orderDate: fullOrderData.orderDate,
+        totalAmount: fullOrderData.totalAmount,
+        pdfDownloaded: false,
+        cart: fullOrderData.cart
+      });
+      
+      // Update counters
       await set(invoiceCounterRef, newInvoiceNumber);
+      await set(tokenCounterRef, newTokenNumber);
+      
       setLastInvoiceNumber(newInvoiceNumber);
+      setLastTokenNumber(newTokenNumber);
 
       // Store order data for later use
       setCurrentOrderData(fullOrderData);
@@ -380,7 +417,7 @@ function Products() {
       setShowSuccessAnimation(true);
       setTimeout(() => setShowSuccessAnimation(false), 3000);
 
-      alert("Order placed successfully! Please download the PDF invoice and then proceed to WhatsApp.");
+      alert(`Order placed successfully! Your Token Number is: ${newTokenNumber}. Please download the PDF invoice and then proceed to WhatsApp.`);
     } catch (error) {
       console.error("Error processing order:", error);
       alert(`Failed to process your order: ${error.message}. Please try again.`);
@@ -396,7 +433,7 @@ function Products() {
         const pdfDoc = generatePDF(currentOrderData);
         const pdfOutput = pdfDoc.output('blob');
         const pdfUrl = URL.createObjectURL(pdfOutput);
-        const fileName = `order_summary_${currentOrderData.invoiceNumber}.pdf`;
+        const fileName = `order_summary_token_${currentOrderData.tokenNumber}_invoice_${currentOrderData.invoiceNumber}.pdf`;
 
         const link = document.createElement('a');
         link.href = pdfUrl;
@@ -412,6 +449,26 @@ function Products() {
 
         document.body.removeChild(link);
         URL.revokeObjectURL(pdfUrl);
+
+        // Update PDF download status in database
+        try {
+          const customerOrdersRef = ref(database, 'customerOrders');
+          const snapshot = await get(customerOrdersRef);
+          const orders = snapshot.val();
+          
+          if (orders) {
+            const orderKey = Object.keys(orders).find(key => 
+              orders[key].tokenNumber === currentOrderData.tokenNumber
+            );
+            
+            if (orderKey) {
+              const updateRef = ref(database, `customerOrders/${orderKey}`);
+              await set(updateRef, { ...orders[orderKey], pdfDownloaded: true });
+            }
+          }
+        } catch (dbError) {
+          console.error("Error updating PDF status:", dbError);
+        }
 
         // Mark PDF as downloaded and show WhatsApp button
         setPdfDownloaded(true);
@@ -446,12 +503,16 @@ function Products() {
     const nameRegex = /^[a-zA-Z\s.]+$/;
     const phoneRegex = /^\d{10}$/;
     const addressRegex = /^[^<>]+$/;
+    const cityRegex = /^[a-zA-Z\s.]+$/;
 
     if (!userName || !nameRegex.test(userName) || userName.length < 3 || userName.length > 50) {
       newErrors.name = 'Name must be 3-50 characters and contain only letters, spaces, and dots';
     }
     if (!userAddress || !addressRegex.test(userAddress) || userAddress.length < 10 || userAddress.length > 100) {
       newErrors.address = 'Address must be between 10 and 100 characters and not contain < or >';
+    }
+    if (!userCity || !cityRegex.test(userCity) || userCity.length < 2 || userCity.length > 30) {
+      newErrors.city = 'City must be 2-30 characters and contain only letters, spaces, and dots';
     }
     if (!userPhone || !phoneRegex.test(userPhone)) {
       newErrors.phone = 'Please enter a valid 10-digit phone number';
@@ -468,6 +529,7 @@ function Products() {
         userName,
         userPhone,
         userAddress,
+        userCity,
         cart,
         totalAmount,
       });
@@ -676,6 +738,21 @@ function Products() {
             </div>
 
             <div>
+              <label htmlFor="userCity" className="block text-sm font-medium text-gray-700">City:</label>
+              <input
+                id="userCity"
+                type="text"
+                placeholder="Enter your city"
+                value={userCity}
+                onChange={(e) => setUserCity(e.target.value)}
+                className={`px-3 py-2 text-black mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.city ? 'border-red-500' : ''}`}
+                required
+                disabled={isLoading}
+              />
+              {errors.city && <span className="text-red-500 text-xs">{errors.city}</span>}
+            </div>
+
+            <div>
               <label htmlFor="userPhone" className="block text-sm font-medium text-gray-700">Phone:</label>
               <input
                 id="userPhone"
@@ -721,7 +798,8 @@ function Products() {
           <div className="space-y-4">
             <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
               <strong>Order Placed Successfully!</strong>
-              <p className="mt-2">Invoice No: {currentOrderData?.invoiceNumber}</p>
+              <p className="mt-2">Token No: {currentOrderData?.tokenNumber}</p>
+              <p>Invoice No: {currentOrderData?.invoiceNumber}</p>
               <p>Total Amount: ₹{currentOrderData?.totalAmount?.toFixed(2)}</p>
             </div>
 
@@ -795,7 +873,7 @@ function Products() {
 
         {isOrderPlaced && (
           <p className="mt-4 text-sm text-green-600">
-            <strong>Order Process:</strong> Your order has been placed successfully! Please download the PDF invoice first, then use the WhatsApp button to share your order details along with the downloaded PDF.
+            <strong>Order Process:</strong> Your order has been placed successfully with Token No: {currentOrderData?.tokenNumber}! Please download the PDF invoice first, then use the WhatsApp button to share your order details along with the downloaded PDF.
           </p>
         )}
       </div>
