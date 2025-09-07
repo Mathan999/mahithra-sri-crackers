@@ -15,6 +15,7 @@ function generateProductCode(selectedCategory) {
     'BIJILI': 'BJL',
     'PAPER BOMBS (ADIYAL)': 'PBA',
     'BOMBS': 'BOM',
+    'PEACOCK SPECIAL' : 'PSL',
     'FLOWER POTS': 'FLP',
     'GROUND CHAKKAR': 'GRC',
     'TWINKLING STAR': 'TWS',
