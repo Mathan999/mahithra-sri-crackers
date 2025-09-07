@@ -33,30 +33,13 @@ function Products() {
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
 
   // Updated categories to match your Firebase data
-  const categories = [
-    "ONE SOUND CRACKERS", 
-    "PARTY CELEBRATION - 2024 SPECIAL", 
-    "ELECTRIC CRACKERS", 
-    "CHORSA & GAINT CRACKERS", 
-    "DELUXE CRACKERS", 
-    "WALA CRACKERS", 
-    "BIJILI", 
-    "PAPER BOMBS (ADIYAL)", 
-    "BOMBS",
-    "FLOWER POTS", 
-    "GROUND CHAKKAR", 
-    "TWINKLING STAR", 
-    "KIDS SPECIAL - 1", 
-    "NEW COLLECTION - 2025", 
-    "FRUITS SHOWER", 
-    "CANDLE SPECIAL", 
-    "MULTI NEW VARIETIES", 
-    "KUTIES FUN", 
-    "SKY ROCKETS", 
-    "MATCHE BOXS", 
-    "MULTI COLOUR", 
-    "SPARKLERS", 
-    "GIFT BOX - NO DISCOUNT"
+ const categories = [
+   "ELECTRIC CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA CRACKERS", 
+        "BIJILI", "PAPER BOMBS (ADIYAL)", "BOMBS","FLOWER POTS", 
+        "GROUND CHAKKAR", "TWINKLING STAR", "KIDS SPECIAL - 1", 
+       "NEW COLLECTION - 2025", "FRUITS SHOWER", "CANDLE SPECIAL", "MULTI NEW VARIETIES", 
+       "KUTIES FUN", "SKY ROCKETS", "MATCHE BOXS", "MULTI COLOUR ", 
+       "SPARKLERS", "GIFT BOX - NO DISCOUNT"
   ];
 
   const handleScroll = useCallback(() => {
