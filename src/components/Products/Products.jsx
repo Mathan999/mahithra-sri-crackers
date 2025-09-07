@@ -34,13 +34,29 @@ function Products() {
 
   // Updated categories to match your Firebase data
   const categories = [
-   "ELECTRIC CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA CRACKERS", 
-        "BIJILI", "PAPER BOMBS (ADIYAL)", "BOMBS","FLOWER POTS","PEACOCK SPECIAL",
-        "GROUND CHAKKAR", "TWINKLING STAR", "KIDS SPECIAL - 1", 
-       "NEW COLLECTION - 2025", "FRUITS SHOWER", "CANDLE SPECIAL", "MULTI NEW VARIETIES", 
-       "KUTIES FUN", "SKY ROCKETS", "MATCHE BOXS", "MULTI COLOUR ", 
-       "SPARKLERS", "GIFT BOX - NO DISCOUNT"
-  ];
+  "ELECTRIC CRACKERS", 
+  "CHORSA & GAINT CRACKERS", 
+  "DELUXE CRACKERS", 
+  "WALA CRACKERS", 
+  "BIJILI", 
+  "PAPER BOMBS (ADIYAL)", 
+  "BOMBS",
+  "PEACOCK SPECIAL",
+  "FLOWER POTS", 
+  "GROUND CHAKKAR", 
+  "TWINKLING STAR", 
+  "KIDS SPECIAL - 1", 
+  "NEW COLLECTION - 2025", 
+  "FRUITS SHOWER", 
+  "CANDLE SPECIAL", 
+  "MULTI NEW VARIETIES", 
+  "KUTIES FUN", 
+  "SKY ROCKETS", 
+  "MATCHE BOXS", 
+  "MULTI COLOUR ", 
+  "SPARKLERS", 
+  "GIFT BOX - NO DISCOUNT"
+];
 
   const handleScroll = useCallback(() => {
     const tableContainer = document.querySelector('.table-container');

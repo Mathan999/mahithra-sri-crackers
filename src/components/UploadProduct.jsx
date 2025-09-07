@@ -8,29 +8,29 @@ function generateProductCode(selectedCategory) {
   
   // Create a mapping for category prefixes based on your actual categories
   const categoryPrefix = {
-    'ELECTRIC CRACKERS': 'ELC',
-    'CHORSA & GAINT CRACKERS': 'CGC',
-    'DELUXE CRACKERS': 'DLX',
-    'WALA CRACKERS': 'WLA',
-    'BIJILI': 'BJL',
-    'PAPER BOMBS (ADIYAL)': 'PBA',
-    'BOMBS': 'BOM',
-    'PEACOCK SPECIAL' : 'PSL',
-    'FLOWER POTS': 'FLP',
-    'GROUND CHAKKAR': 'GRC',
-    'TWINKLING STAR': 'TWS',
-    'KIDS SPECIAL - 1': 'KS1',
-    'NEW COLLECTION - 2025': 'NC5',
-    'FRUITS SHOWER': 'FRS',
-    'CANDLE SPECIAL': 'CND',
-    'MULTI NEW VARIETIES': 'MNV',
-    'KUTIES FUN': 'KTF',
-    'SKY ROCKETS': 'SKR',
-    'MATCHE BOXS': 'MTB',
-    'MULTI COLOUR ': 'MCL',
-    'SPARKLERS': 'SPK',
-    'GIFT BOX - NO DISCOUNT': 'GBX'
-  }[selectedCategory] || 'PRD';
+  'ELECTRIC CRACKERS': 'ELC',
+  'CHORSA & GAINT CRACKERS': 'CGC',
+  'DELUXE CRACKERS': 'DLX',
+  'WALA CRACKERS': 'WLA',
+  'BIJILI': 'BJL',
+  'PAPER BOMBS (ADIYAL)': 'PBA',
+  'BOMBS': 'BOM',
+  'PEACOCK SPECIAL': 'PSL',
+  'FLOWER POTS': 'FLP',
+  'GROUND CHAKKAR': 'GRC',
+  'TWINKLING STAR': 'TWS',
+  'KIDS SPECIAL - 1': 'KS1',
+  'NEW COLLECTION - 2025': 'NC5',
+  'FRUITS SHOWER': 'FRS',
+  'CANDLE SPECIAL': 'CND',
+  'MULTI NEW VARIETIES': 'MNV',
+  'KUTIES FUN': 'KTF',
+  'SKY ROCKETS': 'SKR',
+  'MATCHE BOXS': 'MTB',
+  'MULTI COLOUR ': 'MCL',
+  'SPARKLERS': 'SPK',
+  'GIFT BOX - NO DISCOUNT': 'GBX'
+}[selectedCategory] || 'PRD';
 
   return `${categoryPrefix}${timestamp}`;
 }
@@ -77,13 +77,29 @@ const UploadProduct = () => {
   const [errors, setErrors] = useState({});
 
   const categories = [
-   "ELECTRIC CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA CRACKERS", 
-        "BIJILI", "PAPER BOMBS (ADIYAL)", "BOMBS","FLOWER POTS", 
-        "GROUND CHAKKAR", "TWINKLING STAR", "KIDS SPECIAL - 1", 
-       "NEW COLLECTION - 2025", "FRUITS SHOWER", "CANDLE SPECIAL", "MULTI NEW VARIETIES", 
-       "KUTIES FUN", "SKY ROCKETS", "MATCHE BOXS", "MULTI COLOUR ", 
-       "SPARKLERS", "GIFT BOX - NO DISCOUNT"
-  ];
+  "ELECTRIC CRACKERS", 
+  "CHORSA & GAINT CRACKERS", 
+  "DELUXE CRACKERS", 
+  "WALA CRACKERS", 
+  "BIJILI", 
+  "PAPER BOMBS (ADIYAL)", 
+  "BOMBS",
+  "PEACOCK SPECIAL",
+  "FLOWER POTS", 
+  "GROUND CHAKKAR", 
+  "TWINKLING STAR", 
+  "KIDS SPECIAL - 1", 
+  "NEW COLLECTION - 2025", 
+  "FRUITS SHOWER", 
+  "CANDLE SPECIAL", 
+  "MULTI NEW VARIETIES", 
+  "KUTIES FUN", 
+  "SKY ROCKETS", 
+  "MATCHE BOXS", 
+  "MULTI COLOUR ", 
+  "SPARKLERS", 
+  "GIFT BOX - NO DISCOUNT"
+];
 
   const validateInputs = () => {
     const newErrors = {};
