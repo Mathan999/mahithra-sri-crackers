@@ -53,9 +53,15 @@ function Products() {
   "KUTIES FUN", 
   "SKY ROCKETS", 
   "MATCHE BOXS", 
-  "MULTI COLOUR ", 
-  "SPARKLERS", 
-  "GIFT BOX - NO DISCOUNT"
+ "MULTI COLOUR SINGLE SHOTS",
+  "MULTI COLOUR PIPE SHOTS",
+  "DAY SPECIAL FANCY",
+  "MULTI COLOUR LONG SHOTS",
+  "10 CM SPARKLERS",
+  "12 CM SPARKLERS",
+  "15 CM SPARKLERS",
+  "30 CM SPARKLERS", 
+  "50 SPARKLERS", 
 ];
 
   const handleScroll = useCallback(() => {
