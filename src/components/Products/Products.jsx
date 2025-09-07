@@ -33,7 +33,7 @@ function Products() {
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
 
   // Updated categories to match your Firebase data
- const categories = [
+  const categories = [
    "ELECTRIC CRACKERS", "CHORSA & GAINT CRACKERS", "DELUXE CRACKERS", "WALA CRACKERS", 
         "BIJILI", "PAPER BOMBS (ADIYAL)", "BOMBS","FLOWER POTS", 
         "GROUND CHAKKAR", "TWINKLING STAR", "KIDS SPECIAL - 1", 

@@ -3,14 +3,33 @@ import { ref as dbRef, push } from 'firebase/database';
 import { database } from './firebase';
 import './UploadProduct.css';
 
-function generateProductCode(climate) {
+function generateProductCode(selectedCategory) {
   const timestamp = Date.now().toString().slice(-4);
+  
+  // Create a mapping for category prefixes based on your actual categories
   const categoryPrefix = {
-    Morning: 'MRN',
-    Night: 'NGT',
-    GiftBox: 'GFT',
-    Fancy: 'FNC'
-  }[climate] || 'PRD';
+    'ELECTRIC CRACKERS': 'ELC',
+    'CHORSA & GAINT CRACKERS': 'CGC',
+    'DELUXE CRACKERS': 'DLX',
+    'WALA CRACKERS': 'WLA',
+    'BIJILI': 'BJL',
+    'PAPER BOMBS (ADIYAL)': 'PBA',
+    'BOMBS': 'BOM',
+    'FLOWER POTS': 'FLP',
+    'GROUND CHAKKAR': 'GRC',
+    'TWINKLING STAR': 'TWS',
+    'KIDS SPECIAL - 1': 'KS1',
+    'NEW COLLECTION - 2025': 'NC5',
+    'FRUITS SHOWER': 'FRS',
+    'CANDLE SPECIAL': 'CND',
+    'MULTI NEW VARIETIES': 'MNV',
+    'KUTIES FUN': 'KTF',
+    'SKY ROCKETS': 'SKR',
+    'MATCHE BOXS': 'MTB',
+    'MULTI COLOUR ': 'MCL',
+    'SPARKLERS': 'SPK',
+    'GIFT BOX - NO DISCOUNT': 'GBX'
+  }[selectedCategory] || 'PRD';
 
   return `${categoryPrefix}${timestamp}`;
 }
@@ -46,7 +65,9 @@ const uploadToCloudinary = async (file) => {
 const UploadProduct = () => {
   const [productName, setProductName] = useState('');
   const [category, setCategory] = useState('1Box');
-  const [climate, setClimate] = useState('ONE SOUND CRACKERS');
+  // Changed variable name from 'climate' to 'selectedCategory' for clarity
+  // Initialize with the first category from the list
+  const [selectedCategory, setSelectedCategory] = useState('ELECTRIC CRACKERS');
   const [mrp, setMrp] = useState('');
   const [discount, setDiscount] = useState('');
   const [ourPrice, setOurPrice] = useState('');
@@ -68,8 +89,9 @@ const UploadProduct = () => {
     if (!productName || productName.length < 3) {
       newErrors.productName = 'Product name must be at least 3 characters';
     }
-    if (!climate || climate === 'Select Category') {
-      newErrors.climate = 'Please select a valid category';
+    // Fixed validation to use selectedCategory instead of climate
+    if (!selectedCategory || selectedCategory === 'Select Category') {
+      newErrors.selectedCategory = 'Please select a valid category';
     }
     if (!category) {
       newErrors.category = 'Please select a category';
@@ -107,12 +129,16 @@ const UploadProduct = () => {
       const product = {
         productName,
         category,
-        climate,
+        // Store the selected category in the 'climate' field to maintain compatibility with Products.jsx
+        climate: selectedCategory,
+        // Also store it as 'categorys' for better clarity
+        categorys: selectedCategory,
         mrp: Number(mrp),
         discount: Number(discount),
         ourPrice: Number(ourPrice),
         imageUrl,
-        code: generateProductCode(climate),
+        // Use selectedCategory for code generation
+        code: generateProductCode(selectedCategory),
       };
 
       const productsRef = dbRef(database, 'products');
@@ -121,7 +147,8 @@ const UploadProduct = () => {
       console.log('Product uploaded successfully!');
       setProductName('');
       setCategory('1Box');
-      setClimate('ONE SOUND CRACKERS');
+      // Reset to first category instead of invalid value
+      setSelectedCategory('ELECTRIC CRACKERS');
       setMrp('');
       setDiscount('');
       setOurPrice('');
@@ -182,21 +209,20 @@ const UploadProduct = () => {
         </div>
 
         <div>
-          <label htmlFor="climate" className="block text-sm font-medium text-gray-700">Items:</label>
+          <label htmlFor="selectedCategory" className="block text-sm font-medium text-gray-700">Items:</label>
           <select
-            id="climate"
-            value={climate}
-            onChange={(e) => setClimate(e.target.value)}
-            className={`px-3 py-2 mt-1 block w-full rounded-md border-gray-300 bg-white text-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.climate ? 'border-red-500' : ''}`}
+            id="selectedCategory"
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className={`px-3 py-2 mt-1 block w-full rounded-md border-gray-300 bg-white text-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.selectedCategory ? 'border-red-500' : ''}`}
           >
-            <option value="Select Category" disabled>Select Category</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
               </option>
             ))}
           </select>
-          {errors.climate && <span className="text-red-500 text-xs">{errors.climate}</span>}
+          {errors.selectedCategory && <span className="text-red-500 text-xs">{errors.selectedCategory}</span>}
         </div>
 
         <div>

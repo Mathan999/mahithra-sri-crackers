@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import logo from '../assets/logo.png'
+import logo from '../../assets/logo.png'
 
 const FireworksIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6 md:w-8 md:h-8">
