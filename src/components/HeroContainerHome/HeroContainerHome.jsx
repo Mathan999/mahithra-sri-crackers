@@ -118,7 +118,7 @@ const HeroContainerHome = () => {
         
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="bg-red-600 text-white px-3 py-1 rounded-full flex items-center">
-            <span className="mr-2 text-sm md:text-base">FAST </span>
+            <span className="mr-2 text-sm md:text-base">FAST DEISJS </span>
             <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
