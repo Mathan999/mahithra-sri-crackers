@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { ref, onValue, get, set, push, off } from "firebase/database";
 import { database } from "../firebase";
-import { Plus, Minus, Loader2, CheckCircle, Download } from "lucide-react";
+import { Plus, Minus, Loader2, CheckCircle, Download, X } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "./Products.css";
 
@@ -31,38 +31,39 @@ function Products() {
   const [currentOrderData, setCurrentOrderData] = useState(null);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   // Updated categories to match your Firebase data
   const categories = [
-  "ELECTRIC CRACKERS", 
-  "CHORSA & GAINT CRACKERS", 
-  "DELUXE CRACKERS", 
-  "WALA CRACKERS", 
-  "BIJILI", 
-  "PAPER BOMBS (ADIYAL)", 
-  "BOMBS",
-  "PEACOCK SPECIAL",
-  "FLOWER POTS", 
-  "GROUND CHAKKAR", 
-  "TWINKLING STAR", 
-  "KIDS SPECIAL - 1", 
-  "NEW COLLECTION - 2025", 
-  "FRUITS SHOWER", 
-  "CANDLE SPECIAL", 
-  "MULTI NEW VARIETIES", 
-  "KUTIES FUN", 
-  "SKY ROCKETS", 
-  "MATCHE BOXS", 
- "MULTI COLOUR SINGLE SHOTS",
-  "MULTI COLOUR PIPE SHOTS",
-  "DAY SPECIAL FANCY",
-  "MULTI COLOUR LONG SHOTS",
-  "10 CM SPARKLERS",
-  "12 CM SPARKLERS",
-  "15 CM SPARKLERS",
-  "30 CM SPARKLERS", 
-  "50 SPARKLERS", 
-];
+    "ELECTRIC CRACKERS",
+    "CHORSA & GAINT CRACKERS",
+    "DELUXE CRACKERS",
+    "WALA CRACKERS",
+    "BIJILI",
+    "PAPER BOMBS (ADIYAL)",
+    "BOMBS",
+    "PEACOCK SPECIAL",
+    "FLOWER POTS",
+    "GROUND CHAKKAR",
+    "TWINKLING STAR",
+    "KIDS SPECIAL - 1",
+    "NEW COLLECTION - 2025",
+    "FRUITS SHOWER",
+    "CANDLE SPECIAL",
+    "MULTI NEW VARIETIES",
+    "KUTIES FUN",
+    "SKY ROCKETS",
+    "MATCHE BOXS",
+    "MULTI COLOUR SINGLE SHOTS",
+    "MULTI COLOUR PIPE SHOTS",
+    "DAY SPECIAL FANCY",
+    "MULTI COLOUR LONG SHOTS",
+    "10 CM SPARKLERS",
+    "12 CM SPARKLERS",
+    "15 CM SPARKLERS",
+    "30 CM SPARKLERS",
+    "50 SPARKLERS",
+  ];
 
   const handleScroll = useCallback(() => {
     const tableContainer = document.querySelector('.table-container');
@@ -88,7 +89,6 @@ function Products() {
         const loadedProducts = Object.entries(data).map(([key, value]) => ({
           id: key,
           ...value,
-          // Fixed: Use climate field as the primary category field
           categorys: value.climate || value.categorys || value.category || 'Unspecified',
           imageUrl: value.imageUrl || logo
         }));
@@ -180,6 +180,7 @@ function Products() {
     setCurrentOrderData(null);
     setPdfDownloaded(false);
     setShowWhatsAppButton(false);
+    setSelectedImage(null);
   };
 
   const generatePDF = (orderData) => {
@@ -565,6 +566,14 @@ function Products() {
     clearCart();
   };
 
+  const handleImageClick = (imageUrl) => {
+    setSelectedImage(imageUrl);
+  };
+
+  const closeModal = () => {
+    setSelectedImage(null);
+  };
+
   const isCartEmpty = cart.length === 0;
 
   // Get all unique categories from products for dynamic display
@@ -617,6 +626,28 @@ function Products() {
           `}
         </script>
       </Helmet>
+
+      {selectedImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="relative bg-white p-4 rounded-lg">
+            <button
+              onClick={closeModal}
+              className="absolute top-2 right-2 text-black hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Preview"
+              className="max-w-full max-h-[80vh] object-contain"
+              onError={(e) => {
+                console.error(`Failed to load modal image: ${selectedImage}`);
+                e.target.src = logo;
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {showFixedTotal && (
         <div className="fixed-total-display flex flex-col">
@@ -681,6 +712,8 @@ function Products() {
                                 className='product-image'
                                 src={product.imageUrl && product.imageUrl !== '' ? product.imageUrl : logo}
                                 alt={product.productName || 'Product'}
+                                onClick={() => handleImageClick(product.imageUrl && product.imageUrl !== '' ? product.imageUrl : logo)}
+                                style={{ cursor: 'pointer' }}
                                 onError={(e) => {
                                   console.error(`Failed to load image for ${product.productName}: ${e.target.src}`);
                                   e.target.src = logo;
@@ -729,38 +762,6 @@ function Products() {
             );
           });
         })()}
-
-        {/* Debug section - shows if products exist but aren't displaying */}
-        {/* {products.length > 0 && availableCategories.length === 0 && (
-          <div className="p-4 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-            <h3 className="font-bold">Products found but no valid categories detected:</h3>
-            <p>Total products: {products.length}</p>
-            <p>Sample product structure:</p>
-            <pre className="text-xs">{JSON.stringify(products[0], null, 2)}</pre>
-          </div>
-        )} */}
-        
-        {/* {products.length > 0 && filteredProducts.length === 0 && searchTerm && (
-          <div className="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
-            <p>No products match your search term "{searchTerm}"</p>
-            <p>Available products: {products.map(p => p.productName).join(', ')}</p>
-          </div>
-        )} */}
-
-        {/* {products.length === 0 && (
-          <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-            <h3 className="font-bold">No products found in database</h3>
-            <p>Please check your Firebase configuration and ensure products exist in the 'products' collection.</p>
-          </div>
-        )} */}
-
-        {/* {availableCategories.length > 0 && (
-          <div className="p-4 bg-green-100 border border-green-400 text-green-700 rounded mb-4">
-            <h3 className="font-bold">Products loaded successfully!</h3>
-            <p>Found {products.length} products in {availableCategories.length} categories:</p>
-            <p className="text-sm">{availableCategories.join(', ')}</p>
-          </div>
-        )} */}
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-md" ref={cartSummaryRef}>
