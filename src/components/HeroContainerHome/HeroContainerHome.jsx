@@ -112,7 +112,7 @@ const HeroContainerHome = () => {
           <p className="text-lg md:text-xl lg:text-2xl text-center">CELEBRATE WITH US</p>
           <div className="flex items-center justify-center mt-4">
             <FireworksIcon />
-            <span className="text-xl md:text-2xl lg:text-3xl font-bold text-yellow-400 ml-2">50% DISCOUNT</span>
+            <span className="text-xl md:text-2xl lg:text-3xl font-bold text-yellow-400 ml-2">80% DISCOUNT</span>
           </div>
         </div>
         
