@@ -19,12 +19,12 @@ const Footer = () => {
             </p>
           </div>
           <div className="mt-4 md:mt-0">
-            <p className="text-sm">
+            {/* <p className="text-sm">
               Developed by{' '}
               <span className="text-blue-400 hover:text-blue-300 transition duration-300">
                 Nextriad Solutions
               </span>
-            </p>
+            </p> */}
           </div>
         </div>
         <div className="border-t border-gray-700 py-6">

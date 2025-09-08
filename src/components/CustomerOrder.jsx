@@ -10,6 +10,55 @@ const CustomerOrder = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  // PWA installation state
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  // Handle PWA installation prompt
+  useEffect(() => {
+    // Log to debug if beforeinstallprompt is firing
+    const handleBeforeInstallPrompt = (e) => {
+      console.log('beforeinstallprompt event fired');
+      e.preventDefault();
+      setDeferredPrompt(e); // Store prompt for later use
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Handle app installed event
+    const handleAppInstalled = () => {
+      console.log('appinstalled event fired');
+      localStorage.setItem('pwaInstalled', 'true');
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Cleanup event listeners
+    return () => {
+      console.log('Cleaning up PWA event listeners');
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  // Trigger PWA installation
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      console.log('Install button clicked, showing prompt');
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('Install prompt outcome:', outcome);
+      if (outcome === 'accepted') {
+        localStorage.setItem('pwaInstalled', 'true');
+        setIsInstalled(true);
+        setDeferredPrompt(null);
+      }
+    } else {
+      console.log('No deferredPrompt available');
+    }
+  };
 
   useEffect(() => {
     const customerOrdersRef = ref(database, 'customerOrders');
@@ -78,7 +127,7 @@ const CustomerOrder = () => {
     // Header
     doc.setFontSize(18);
     doc.setTextColor(0, 0, 0);
-     doc.text("MAHITHRAA SRI CRACKERS", 105, 20, { align: "center" });
+    doc.text("MAHITHRAA SRI CRACKERS", 105, 20, { align: "center" });
 
     doc.setFontSize(10);
     doc.text("Vanamoorthilingapuram,", 105, 30, { align: "center" });
@@ -197,13 +246,25 @@ const CustomerOrder = () => {
               Showing: {filteredOrders.length} results
             </p>
           </div>
-          <button
-            onClick={refreshOrders}
-            className="mt-4 sm:mt-0 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 flex items-center"
-          >
-            <RefreshCw size={16} className="mr-2" />
-            Refresh
-          </button>
+          <div className="flex space-x-4 mt-4 sm:mt-0">
+            <button
+              onClick={refreshOrders}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-150 flex items-center"
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Refresh
+            </button>
+            {/* Install Button - Shown if prompt is available and not installed */}
+            {deferredPrompt && !isInstalled && (
+              <button
+                onClick={handleInstallClick}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-150 flex items-center"
+              >
+                <Download size={16} className="mr-2" />
+                Install App
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Filters */}
