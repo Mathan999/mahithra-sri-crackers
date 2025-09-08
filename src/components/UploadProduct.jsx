@@ -35,6 +35,20 @@ function generateProductCode(selectedCategory) {
   return `${categoryPrefix}${timestamp}`;
 }
 
+// Function to convert local image to File object for upload
+const convertImageToFile = async (imagePath) => {
+  try {
+    const response = await fetch(imagePath);
+    const blob = await response.blob();
+    // Create a File object from the blob
+    const file = new File([blob], 'default-product.png', { type: blob.type });
+    return file;
+  } catch (error) {
+    console.error('Error converting image to file:', error);
+    return null;
+  }
+};
+
 // Cloudinary upload function
 const uploadToCloudinary = async (file) => {
   const formData = new FormData();
@@ -128,9 +142,7 @@ const UploadProduct = () => {
     if (ourPrice === '' || isNaN(ourPrice) || Number(ourPrice) <= 0) {
       newErrors.ourPrice = 'Please enter a valid price greater than 0';
     }
-    if (!image) {
-      newErrors.image = 'Please upload an image';
-    }
+    // Remove image validation since we'll use default if no image is provided
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -145,8 +157,26 @@ const UploadProduct = () => {
     setUploading(true);
     try {
       let imageUrl = '';
+      
       if (image) {
+        // Upload the selected image
         imageUrl = await uploadToCloudinary(image);
+      } else {
+        // Upload the default image from public/assets folder
+        const defaultImagePath = '../assets/logo_1x1.png'; // Path to your default image
+        try {
+          const defaultImageFile = await convertImageToFile(defaultImagePath);
+          if (defaultImageFile) {
+            imageUrl = await uploadToCloudinary(defaultImageFile);
+          } else {
+            // Fallback: use a default Cloudinary URL or local path
+            imageUrl = '../assets/logo_1x1.png';
+          }
+        } catch (error) {
+          console.error('Error uploading default image:', error);
+          // Use local path as fallback
+          imageUrl = '../assets/logo_1x1.png';
+        }
       }
 
       const product = {
@@ -168,6 +198,7 @@ const UploadProduct = () => {
       await push(productsRef, product);
 
       console.log('Product uploaded successfully!');
+      alert('Product uploaded successfully!');
       setProductName('');
       setCategory('1Box');
       // Reset to first category instead of invalid value
@@ -178,7 +209,12 @@ const UploadProduct = () => {
       setImage(null);
       setErrors({});
 
-      window.location.reload();
+      // Reset file input
+      const fileInput = document.getElementById('image');
+      if (fileInput) {
+        fileInput.value = '';
+      }
+
     } catch (error) {
       console.error('Error uploading product:', error);
       alert('Error uploading product. Please try again.');
@@ -192,15 +228,15 @@ const UploadProduct = () => {
       <h2 className="text-2xl font-bold mb-4 text-center text-black">Upload Product</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="image" className="block text-sm font-medium text-gray-700">Choose Image:</label>
+          <label htmlFor="image" className="block text-sm font-medium text-gray-700">Choose Image (Optional):</label>
           <input
             type="file"
             id="image"
             accept="image/*"
             onChange={(e) => setImage(e.target.files[0])}
-            className={`px-3 py-2 mt-1 block w-full rounded-md border-gray-300 bg-white text-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 ${errors.image ? 'border-red-500' : ''}`}
+            className="px-3 py-2 mt-1 block w-full rounded-md border-gray-300 bg-white text-black shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
           />
-          {errors.image && <span className="text-red-500 text-xs">{errors.image}</span>}
+          <p className="text-xs text-gray-500 mt-1">If no image is selected, a default image will be used.</p>
         </div>
 
         <div>
