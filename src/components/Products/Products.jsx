@@ -2,13 +2,89 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { ref, onValue, get, set, push, off } from "firebase/database";
 import { database } from "../firebase";
-import { Plus, Minus, Loader2, CheckCircle, Download, X } from "lucide-react";
+import { Plus, Minus, Loader2, CheckCircle, Download, X, Bell } from "lucide-react";
 import { jsPDF } from "jspdf";
 import "./Products.css";
 
 // Use absolute paths for assets in the public folder
 const qrCodeImage = '../assets/qr_code.webp'; // Adjust the path as necessary
 const logo = '../assets/logo_1x1.png';
+
+// Notification service
+const NotificationService = {
+  // Request notification permission
+  async requestPermission() {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      return permission === 'granted';
+    }
+    return false;
+  },
+
+  // Show browser notification
+  showBrowserNotification(title, options = {}) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const notification = new Notification(title, {
+        icon: logo,
+        badge: logo,
+        ...options
+      });
+      
+      // Auto close after 5 seconds
+      setTimeout(() => notification.close(), 5000);
+      
+      return notification;
+    }
+    return null;
+  },
+
+  // Send notification to admin/store owner
+  async sendOrderNotification(orderData) {
+    const title = `New Order #${orderData.tokenNumber}`;
+    const body = `Customer: ${orderData.userName}\nAmount: ₹${orderData.totalAmount.toFixed(2)}\nItems: ${orderData.cart.length}`;
+    
+    this.showBrowserNotification(title, {
+      body,
+      tag: `order-${orderData.tokenNumber}`,
+      requireInteraction: true,
+      actions: [
+        { action: 'view', title: 'View Order' },
+        { action: 'dismiss', title: 'Dismiss' }
+      ]
+    });
+
+    // Store notification in Firebase for admin dashboard
+    try {
+      const notificationsRef = ref(database, 'notifications');
+      await push(notificationsRef, {
+        type: 'new_order',
+        title,
+        message: body,
+        orderData: {
+          tokenNumber: orderData.tokenNumber,
+          invoiceNumber: orderData.invoiceNumber,
+          customerName: orderData.userName,
+          totalAmount: orderData.totalAmount,
+          itemCount: orderData.cart.length
+        },
+        timestamp: new Date().toISOString(),
+        read: false
+      });
+    } catch (error) {
+      console.error('Error storing notification:', error);
+    }
+  },
+
+  // Play notification sound
+  playNotificationSound() {
+    try {
+      const audio = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBj2c4+67eCMFLIjP8+WXQQoXY7Tl4axYEgtFpeCzwmwhBj2c6+m9fyMFLIvH8+KVQgoZY7bn7aJRFQhLqeC2ymghBj+a2+DFeCMFKojO8+GVQgoaYrTh27JjFwlBmePxtmYdBTiN2+3BeSkFKIHI9N+UQQsVW7PvybRdGAg+j+Pp1W0gCTyo4++GQAoCdsvtxqtkHgU9mO/ltUwgCDyV4++JRA0EdcrvxqliHAU8l+rtuEslBzqR5+yHRAoEdcnug65lHwU+leJ9gUQNB4jH8+aUP");
+      audio.play().catch(() => {}); // Ignore errors if audio fails
+    } catch (error) {
+      console.log('Audio notification failed:', error);
+    }
+  }
+};
 
 function Products() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,6 +108,11 @@ function Products() {
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [showWhatsAppButton, setShowWhatsAppButton] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
+  
+  // New notification states
+  const [notifications, setNotifications] = useState([]);
+  const [showNotificationPermission, setShowNotificationPermission] = useState(false);
+  const [notificationPermissionGranted, setNotificationPermissionGranted] = useState(false);
 
   // Updated categories to match your Firebase data
   const categories = [
@@ -64,6 +145,57 @@ function Products() {
     "30 CM SPARKLERS",
     "50 SPARKLERS",
   ];
+
+  // Initialize notification permission check
+  useEffect(() => {
+    const checkNotificationPermission = () => {
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          setNotificationPermissionGranted(true);
+        } else if (Notification.permission === 'default') {
+          setShowNotificationPermission(true);
+        }
+      }
+    };
+
+    checkNotificationPermission();
+  }, []);
+
+  // Request notification permission
+  const handleNotificationPermission = async () => {
+    const granted = await NotificationService.requestPermission();
+    setNotificationPermissionGranted(granted);
+    setShowNotificationPermission(false);
+    
+    if (granted) {
+      showInAppNotification('Notifications enabled! You will receive order updates.', 'success');
+    } else {
+      showInAppNotification('Notifications disabled. You can enable them later in browser settings.', 'info');
+    }
+  };
+
+  // In-app notification system
+  const showInAppNotification = (message, type = 'info', duration = 5000) => {
+    const id = Date.now();
+    const notification = {
+      id,
+      message,
+      type,
+      timestamp: new Date().toISOString()
+    };
+
+    setNotifications(prev => [...prev, notification]);
+
+    // Auto remove notification
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, duration);
+  };
+
+  // Remove specific notification
+  const removeNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
+  };
 
   const handleScroll = useCallback(() => {
     const tableContainer = document.querySelector('.table-container');
@@ -409,6 +541,7 @@ function Products() {
 
     const ordersRef = ref(database, 'orders');
     const customerOrdersRef = ref(database, 'customerOrders');
+    const stockRef = ref(database, 'stock'); // Reference to Stock.jsx data storage
     const invoiceCounterRef = ref(database, 'invoiceCounter');
     const tokenCounterRef = ref(database, 'tokenCounter');
 
@@ -429,6 +562,31 @@ function Products() {
         pdfDownloaded: false,
         cart: fullOrderData.cart
       });
+
+      // Store data in Stock.jsx location
+      await push(stockRef, {
+        orderData: fullOrderData,
+        stockUpdate: {
+          updatedAt: new Date().toISOString(),
+          orderTokenNumber: newTokenNumber,
+          orderInvoiceNumber: newInvoiceNumber,
+          items: fullOrderData.cart.map(item => ({
+            productId: item.id,
+            productName: item.productName,
+            quantityOrdered: item.quantity,
+            pricePerUnit: item.ourPrice,
+            totalPrice: item.ourPrice * item.quantity,
+            category: item.categorys
+          })),
+          totalOrderValue: fullOrderData.totalAmount,
+          customerInfo: {
+            name: fullOrderData.userName,
+            phone: fullOrderData.userPhone,
+            address: fullOrderData.userAddress,
+            city: fullOrderData.userCity
+          }
+        }
+      });
       
       // Update counters
       await set(invoiceCounterRef, newInvoiceNumber);
@@ -443,10 +601,46 @@ function Products() {
       setShowSuccessAnimation(true);
       setTimeout(() => setShowSuccessAnimation(false), 3000);
 
+      // Send notifications
+      try {
+        // Play notification sound
+        NotificationService.playNotificationSound();
+
+        // Send browser notification
+        if (notificationPermissionGranted) {
+          await NotificationService.sendOrderNotification(fullOrderData);
+        }
+
+        // Show in-app notification
+        showInAppNotification(
+          `New order placed successfully! Token #${newTokenNumber} - Amount: ₹${fullOrderData.totalAmount.toFixed(2)}`,
+          'success',
+          8000
+        );
+
+        // Additional admin notification
+        showInAppNotification(
+          `Order stored in stock system. Customer: ${fullOrderData.userName}, Items: ${fullOrderData.cart.length}`,
+          'info',
+          6000
+        );
+
+      } catch (notificationError) {
+        console.error("Notification error:", notificationError);
+        // Don't fail the order process if notifications fail
+      }
+
       alert(`Order placed successfully! Your Token Number is: ${newTokenNumber}. Please download the PDF invoice and then proceed to WhatsApp.`);
     } catch (error) {
       console.error("Error processing order:", error);
       alert(`Failed to process your order: ${error.message}. Please try again.`);
+      
+      // Show error notification
+      showInAppNotification(
+        `Order failed: ${error.message}`,
+        'error',
+        10000
+      );
     } finally {
       setIsLoading(false);
     }
@@ -499,10 +693,21 @@ function Products() {
         // Mark PDF as downloaded and show WhatsApp button
         setPdfDownloaded(true);
         setShowWhatsAppButton(true);
+        
+        // PDF download notification
+        showInAppNotification(
+          `PDF invoice downloaded for Token #${currentOrderData.tokenNumber}`,
+          'success'
+        );
+        
         alert("PDF downloaded successfully! Now you can proceed to WhatsApp to share your order details.");
       }
     } catch (error) {
       console.error("Error generating PDF:", error);
+      showInAppNotification(
+        `PDF download failed: ${error.message}`,
+        'error'
+      );
       alert(`Failed to generate PDF: ${error.message}`);
     } finally {
       setIsPdfDownloading(false);
@@ -512,6 +717,10 @@ function Products() {
   const handleWhatsAppShare = () => {
     if (currentOrderData && pdfDownloaded) {
       sendWhatsAppMessage(currentOrderData);
+      showInAppNotification(
+        `WhatsApp message prepared for Token #${currentOrderData.tokenNumber}`,
+        'info'
+      );
     } else {
       alert("Please download the PDF first before proceeding to WhatsApp.");
     }
@@ -579,6 +788,22 @@ function Products() {
   // Get all unique categories from products for dynamic display
   const availableCategories = [...new Set(filteredProducts.map(p => p.categorys))].filter(cat => cat);
 
+  // Get notification style based on type
+  const getNotificationStyle = (type) => {
+    switch (type) {
+      case 'success':
+        return 'bg-green-500 text-white border-green-600';
+      case 'error':
+        return 'bg-red-500 text-white border-red-600';
+      case 'info':
+        return 'bg-blue-500 text-white border-blue-600';
+      case 'warning':
+        return 'bg-yellow-500 text-black border-yellow-600';
+      default:
+        return 'bg-gray-500 text-white border-gray-600';
+    }
+  };
+
   return (
     <div className="products">
       <Helmet>
@@ -626,6 +851,60 @@ function Products() {
           `}
         </script>
       </Helmet>
+
+      {/* Notification Permission Banner */}
+      {showNotificationPermission && (
+        <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-4 z-50 shadow-lg">
+          <div className="max-w-7xl mx-auto flex items-center justify-between">
+            <div className="flex items-center">
+              <Bell size={24} className="mr-3" />
+              <div>
+                <h4 className="font-semibold">Enable Order Notifications</h4>
+                <p className="text-sm opacity-90">Get notified when orders are placed and processed</p>
+              </div>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={handleNotificationPermission}
+                className="px-4 py-2 bg-white text-blue-600 rounded hover:bg-gray-100 transition"
+              >
+                Allow
+              </button>
+              <button
+                onClick={() => setShowNotificationPermission(false)}
+                className="px-4 py-2 border border-white text-white rounded hover:bg-blue-700 transition"
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Notifications */}
+      <div className="fixed top-20 right-4 z-50 space-y-2">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className={`max-w-sm p-4 rounded-lg shadow-lg border-l-4 transition-all duration-300 ${getNotificationStyle(notification.type)}`}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium">{notification.message}</p>
+                <p className="text-xs opacity-75 mt-1">
+                  {new Date(notification.timestamp).toLocaleTimeString()}
+                </p>
+              </div>
+              <button
+                onClick={() => removeNotification(notification.id)}
+                className="ml-2 opacity-75 hover:opacity-100 transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {selectedImage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
