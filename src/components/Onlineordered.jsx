@@ -6,7 +6,7 @@ import "jspdf-autotable";
 import "./OnlineOrdered.css";
 
 // Import required images
-import qrCodeImage from '../assets/qr.webp';
+// import qrCodeImage from '../assets/qr.webp';
 //import backgroundImage from '../assets/pdf.webp';
 
 function OnlineOrdered() {
