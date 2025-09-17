@@ -659,7 +659,7 @@ function Products() {
       return;
     }
 
-    if (totalAmount < 3000) {
+    if (totalAmount < 3) {
       alert("YOUR ORDER IS LOW COST SO ORDER ABOVE 3000");
       return;
     }
@@ -881,7 +881,7 @@ function Products() {
     if (!userName || !nameRegex.test(userName) || userName.length < 3 || userName.length > 50) {
       newErrors.name = 'Name must be 3-50 characters and contain only letters, spaces, and dots';
     }
-    if (!userAddress || !addressRegex.test(userAddress) || userAddress.length < 10 || userAddress.length > 100) {
+    if (!userAddress || !addressRegex.test(userAddress) || userAddress.length < 1 || userAddress.length > 100) {
       newErrors.address = 'Address must be between 10 and 100 characters and not contain < or >';
     }
     if (!userCity || !cityRegex.test(userCity) || userCity.length < 2 || userCity.length > 30) {
